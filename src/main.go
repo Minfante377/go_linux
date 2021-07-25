@@ -8,17 +8,20 @@ import(
 	"time"
 )
 
-var log_dir string = "logs"
-
+var LogDir string = "logs"
+var Version string = ""
 
 func init() {
 	var filepath string
-	os.Mkdir(log_dir, 0777)
-	filepath = fmt.Sprintf("%s/%s.log", log_dir, time.Now().String())
+	os.Mkdir(LogDir, 0777)
+	filepath = fmt.Sprintf("%s/%s.log", LogDir, time.Now().String())
 	var rc int = logger_helper.SetLogFile(filepath)
 	if rc != 0 {
 		panic("Could not set logger log file!")
 	}
+	var msg string
+	msg = fmt.Sprintf("Version: %s", Version)
+	logger_helper.LogInfo(msg)
 }
 
 
