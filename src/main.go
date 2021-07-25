@@ -14,7 +14,8 @@ var Version string = ""
 func init() {
 	var filepath string
 	os.Mkdir(LogDir, 0777)
-	filepath = fmt.Sprintf("%s/%s.log", LogDir, time.Now().String())
+	filepath = fmt.Sprintf("%s/%s.log", LogDir,
+						   time.Now().Format("01-02-2006_03-04"))
 	var rc int = logger_helper.SetLogFile(filepath)
 	if rc != 0 {
 		panic("Could not set logger log file!")
