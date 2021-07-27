@@ -6,7 +6,7 @@ PROJECT_NAME=go_exec
 
 GOPATH := $(PWD)
 
-LDFLAGS=-ldflags "-X=main.Version=$(VERSION) -X=main.Debug=$(DEBUG) -X=main.LogDir=$(LOG_DIR) -X=main.Pass=$(PASS)"
+LDFLAGS=-ldflags "-X=main.Version=$(VERSION) -X=main.Debug=$(DEBUG) -X=main.LogDir=$(LOG_DIR) -X=main.Pass=$(PASS) -X=main.Scripts=$(SCRIPTS)"
 
 build:
 	@GOPATH=$(GOPATH) go build $(LDFLAGS) -o bin/$(PROJECT_NAME) src/main.go

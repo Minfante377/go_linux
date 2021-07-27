@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"logger_helper"
+	"os"
 	"os/exec"
 	"regexp"
 	"time"
@@ -49,4 +50,26 @@ func ExecSudoCmd(command string, pass string) (string) {
 	e.Send(pass + "\n")
 	result, _, err = e.Expect(promptRE, timeout)
 	return result
+}
+
+
+func SaveScript(path string, data string) error {
+	logger_helper.LogInfo(fmt.Sprintf("Saving script %s", path))
+	var file, err = os.OpenFile(path, os.O_RDWR|os.O_CREATE, 0755)
+
+	if err != nil {
+		logger_helper.LogError("Error saving script")
+		return err
+	}
+
+	_, err = file.Write([]byte(data + "\n"))
+
+	if err != nil {
+		logger_helper.LogError("Error writing contents to the file")
+		file.Close()
+		return err
+	}
+
+	file.Close()
+	return nil
 }

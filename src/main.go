@@ -12,10 +12,12 @@ var LogDir string = "logs"
 var Version string = ""
 var Pass string = ""
 var Debug string = ""
+var Scripts string = "scripts"
 
 func init() {
 	var filepath string
 	os.Mkdir(LogDir, 0777)
+	os.Mkdir(Scripts, 0777)
 	filepath = fmt.Sprintf("%s/%s.log", LogDir,
 						   time.Now().Format("01-02-2006_03-04"))
 	var rc int = logger_helper.SetLogFile(filepath, Debug)
@@ -30,7 +32,9 @@ func init() {
 
 func main() {
 	logger_helper.LogInfo("Starting...")
-	var cmd string = "sudo ls"
+	var data string = "echo \"Hello world\""
+	cmd_helper.SaveScript(fmt.Sprintf("%s/test.sh", Scripts), data)
+	var cmd string = "sudo ls scripts"
 	var result string
 	result = cmd_helper.ExecSudoCmd(cmd, Pass)
 	var msg string
