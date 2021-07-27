@@ -5,6 +5,7 @@ VERSION := $(shell git rev-parse --short HEAD)
 PROJECT_NAME=go_exec
 
 GOPATH := $(PWD)
+PKGS := $(shell ls src)
 
 LDFLAGS=-ldflags "-X=main.Version=$(VERSION) -X=main.Debug=$(DEBUG) -X=main.LogDir=$(LOG_DIR) -X=main.Pass=$(PASS) -X=main.Scripts=$(SCRIPTS)"
 
@@ -13,6 +14,9 @@ build:
 
 run:
 	@GOPATH=$(GOPATH) go run $(LDFLAGS) src/main.go
+
+test:
+	@GOPATH=$(GOPATH) go test -v cmd_helper
 
 clean:
 	rm -rf bin/

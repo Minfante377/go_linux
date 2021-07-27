@@ -40,3 +40,11 @@ func LogError(msg string) {
 		fmt.Printf("[ERROR - %s]: %s\n", dt, msg)
 	}
 }
+
+
+func LogTestStep(step string) {
+	log.Printf(fmt.Sprintf("[TEST STEP]: %s---------------\n\n", step))
+	if debug_mode == "true" {
+		fmt.Printf(fmt.Sprintf("[TEST STEP]: %s---------------\n\n", step))
+	}
+}

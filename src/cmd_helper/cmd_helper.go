@@ -40,6 +40,7 @@ func ExecCmd(command string) (error, string, string) {
 
 func ExecSudoCmd(command string, pass string) (string) {
 	var result string
+	logger_helper.LogInfo(fmt.Sprintf("Executing sudo cmd: %s", command))
 	e, _, err := expect.Spawn(command, -1)
 	if err != nil {
 		logger_helper.LogError(fmt.Sprintf("Could not spawn process %s",
@@ -62,7 +63,7 @@ func SaveScript(path string, data string) error {
 		return err
 	}
 
-	_, err = file.Write([]byte(data + "\n"))
+	_, err = file.Write([]byte(data))
 
 	if err != nil {
 		logger_helper.LogError("Error writing contents to the file")
@@ -88,5 +89,6 @@ func ExecSudoScript(path string, pass string) string {
 	var cmd, result string
 	cmd = fmt.Sprintf("sudo /bin/bash %s", path)
 	result = ExecSudoCmd(cmd, pass)
+	logger_helper.LogInfo(fmt.Sprintf("Result is: %s", result))
 	return result
 }
