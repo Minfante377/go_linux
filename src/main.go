@@ -34,9 +34,9 @@ func main() {
 	logger_helper.LogInfo("Starting...")
 	var data string = "echo \"Hello world\""
 	cmd_helper.SaveScript(fmt.Sprintf("%s/test.sh", Scripts), data)
-	var cmd string = "sudo ls scripts"
 	var result string
-	result = cmd_helper.ExecSudoCmd(cmd, Pass)
+	result = cmd_helper.ExecSudoScript(fmt.Sprintf("%s/test.sh",
+											       Scripts), Pass)
 	var msg string
 	msg = fmt.Sprintf("res =\n%s", result)
 	logger_helper.LogInfo(msg)

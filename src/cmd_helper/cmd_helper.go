@@ -73,3 +73,20 @@ func SaveScript(path string, data string) error {
 	file.Close()
 	return nil
 }
+
+
+func ExecScript(path string) (error, string, string) {
+	var err error
+	var stdout, stderr, cmd string
+	cmd = fmt.Sprintf("/bin/bash %s", path)
+	err, stdout, stderr = ExecCmd(cmd)
+	return err, stdout, stderr
+}
+
+
+func ExecSudoScript(path string, pass string) string {
+	var cmd, result string
+	cmd = fmt.Sprintf("sudo /bin/bash %s", path)
+	result = ExecSudoCmd(cmd, pass)
+	return result
+}
