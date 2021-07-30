@@ -1,10 +1,11 @@
 package main
 
-import(
-	"cmd_helper"
+import (
 	"fmt"
 	"logger_helper"
 	"os"
+	"strconv"
+	"telegram_helper"
 	"time"
 )
 
@@ -13,6 +14,8 @@ var Version string = ""
 var Pass string = ""
 var Debug string = ""
 var Scripts string = "scripts"
+var TelegramToken string = ""
+var User string = ""
 
 func init() {
 	var filepath string
@@ -32,12 +35,11 @@ func init() {
 
 func main() {
 	logger_helper.LogInfo("Starting...")
-	var data string = "echo \"Hello world\""
-	cmd_helper.SaveScript(fmt.Sprintf("%s/test.sh", Scripts), data)
-	var result string
-	result = cmd_helper.ExecSudoScript(fmt.Sprintf("%s/test.sh",
-											       Scripts), Pass)
-	var msg string
-	msg = fmt.Sprintf("res =\n%s", result)
-	logger_helper.LogInfo(msg)
+	var user int
+	user, _ = strconv.Atoi(User)
+	telegram_helper.InitBot(TelegramToken, user)
+	for true {
+		time.Sleep(30 * time.Second)
+		logger_helper.LogInfo("Running...")
+	}
 }
