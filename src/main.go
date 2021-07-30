@@ -37,6 +37,7 @@ func main() {
 	logger_helper.LogInfo("Starting...")
 	var user int
 	user, _ = strconv.Atoi(User)
+	telegram_helper.InitQueue(TelegramToken)
 	telegram_helper.InitBot(TelegramToken, user)
 	for true {
 		time.Sleep(30 * time.Second)

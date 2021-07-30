@@ -8,12 +8,14 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"sync"
 	"time"
 )
 
 const (
 	MAX_BOTS int = 20
-	SLEEP time.Duration = 1 * time.Second
+	LISTEN time.Duration = 2 * time.Second
+	PROCESS time.Duration = 1 * time.Second
 	GET_UPDATES string = "https://api.telegram.org/bot%s/getUpdates?offset=%d"
 	SEND_MSG string = "https://api.telegram.org/bot%s/sendMessage"
 )
@@ -29,6 +31,7 @@ type Result struct {
 }
 
 type Message struct {
+	MessageId int 	  `json:"message_id"`
 	Chat     Chat     `json:"chat"`
 	Text     string   `json:"text"`
 }
@@ -41,17 +44,26 @@ type TelegramBot struct {
 	token string
 	user int
 	working int
-	msg_id int
+}
+
+type Queue struct {
+	msgs []Message
+	token string
+	running int
+	update_id int
+	mu sync.Mutex
 }
 
 var bot_count int = 0
 var bots [MAX_BOTS]*TelegramBot
-
+var queue Queue
+var netClient = &http.Client{
+	  Timeout: time.Second * 10,
+}
 
 func setParams(token string, user int, bot *TelegramBot) {
 	bot.token = token
 	bot.user = user
-	bot.msg_id = -1
 }
 
 
@@ -81,45 +93,100 @@ func parseResponse(r *http.Response, update *Update) (error) {
 }
 
 
+func start_listening() {
+	logger_helper.LogInfo("Start listening...")
+	for true {
+		if queue.running == 0 {
+			return
+		}
+		update := Update{}
+		var err error
+		r, err := netClient.Get(fmt.Sprintf(GET_UPDATES, queue.token,
+								queue.update_id))
+		defer r.Body.Close()
+		err = parseResponse(r, &update)
+		if err == nil && update.Ok {
+			logger_helper.LogInfo("New messages available")
+			queue.mu.Lock()
+			for _, result := range update.Result {
+				queue.msgs = append(queue.msgs, result.Message)
+				if queue.update_id <= result.UpdateId {
+					queue.update_id = result.UpdateId + 1
+				}
+			}
+			queue.mu.Unlock()
+		}
+		time.Sleep(LISTEN)
+	}
+}
+
+
+func get_msg(user int) (int, *Message) {
+	queue.mu.Lock()
+	for index, _ := range queue.msgs {
+		if queue.msgs[index].Chat.Id == user {
+			queue.mu.Unlock()
+			return queue.msgs[index].MessageId, &queue.msgs[index]
+		}
+	}
+	queue.mu.Unlock()
+	return -1, nil
+}
+
+
+func delete_msg(message_id int) {
+	queue.mu.Lock()
+	for index := range queue.msgs {
+		if queue.msgs[index].MessageId == message_id {
+			if index == len(queue.msgs){
+				queue.msgs = queue.msgs[:len(queue.msgs)-1]
+				queue.mu.Unlock()
+				return
+			} else {
+				queue.msgs = append(queue.msgs[:index],
+									queue.msgs[index+1:]...)
+				queue.mu.Unlock()
+				return
+			}
+		}
+	}
+	queue.mu.Unlock()
+}
+
+
 func handler(bot *TelegramBot) {
 	for true {
 		if bot.working < 1 {
 			return
 		}
-		update := Update{}
-		var err error
-		r, _ := http.Get(fmt.Sprintf(GET_UPDATES, bot.token, bot.msg_id))
-		err = parseResponse(r, &update)
-		var stdout, stderr string
-		if update.Ok && len(update.Result) > 0 &&
-			update.Result[0].Message.Chat.Id == bot.user {
-			err, stdout, stderr = cmd_helper.ExecCmd(
-				update.Result[0].Message.Text)
+		msg_id, msg := get_msg(bot.user)
+		if msg_id > 0 {
+			var stdout, stderr string
+			var err error
+			err, stdout, stderr = cmd_helper.ExecCmd(msg.Text)
 			if err != nil {
 				_, err = http.PostForm(
 					fmt.Sprintf(SEND_MSG, bot.token),
 					url.Values{
-						"chat_id": {strconv.Itoa(
-									update.Result[0].Message.Chat.Id)},
-						"text":    {stderr},
+					"chat_id": {strconv.Itoa(msg.Chat.Id)},
+					"text": {stderr},
 					})
 			}else{
 				_, err = http.PostForm(
 				fmt.Sprintf(SEND_MSG, bot.token),
 					url.Values{
-						"chat_id": {strconv.Itoa(
-									update.Result[0].Message.Chat.Id)},
+						"chat_id": {strconv.Itoa(msg.Chat.Id)},
 						"text":    {stdout},
 					})
 			}
 			if err != nil {
 				logger_helper.LogError("Error sending msg")
 			} else {
-				bot.msg_id = update.Result[0].UpdateId + 1
+				delete_msg(msg_id)
 			}
 		}
 	}
-	time.Sleep(SLEEP)
+	time.Sleep(PROCESS)
 }
 
 
@@ -133,6 +200,17 @@ func getIndexByUser(user int) int {
 	return -1
 }
 
+func InitQueue(token string) int {
+	if queue.running != 1 {
+		queue.running = 1
+		queue.token = token
+		queue.update_id = 0
+		go start_listening()
+		return 0
+	}
+	logger_helper.LogError("Queue was already running")
+	return -1
+}
 
 func InitBot(token string, user int) int {
 	var new_bot *TelegramBot = spawnBot(token, user)
