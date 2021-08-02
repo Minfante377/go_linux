@@ -9,6 +9,9 @@ PKGS := $(shell ls src)
 
 LDFLAGS=-ldflags "-X=main.Version=$(VERSION) -X=main.Debug=$(DEBUG) -X=main.LogDir=$(LOG_DIR) -X=main.Pass=$(PASS) -X=main.Scripts=$(SCRIPTS) -X=main.TelegramToken=$(TELEGRAM_TOKEN) -X=main.User=$(USER)"
 
+install:
+	go get -d ./...
+
 build:
 	@GOPATH=$(GOPATH) go build $(LDFLAGS) -o bin/$(PROJECT_NAME) src/main.go
 
@@ -23,4 +26,5 @@ clean:
 
 all:
 	clean
+	install
 	build
