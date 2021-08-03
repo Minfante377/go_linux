@@ -19,7 +19,7 @@ run:
 	@GOPATH=$(GOPATH) go run $(LDFLAGS) src/main.go
 
 test:
-	@GOPATH=$(GOPATH) go test -v cmd_helper db_helper
+	@GOPATH=$(GOPATH) go test -v cmd_helper db_helper server_helper
 
 clean:
 	rm -rf bin/

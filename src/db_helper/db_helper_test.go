@@ -6,6 +6,7 @@ import (
 	"logger_helper"
 	"os"
 	"runtime"
+	"strconv"
 	"testing"
 	"time"
 )
@@ -65,8 +66,8 @@ func TestAddDeleteUser(t *testing.T) {
 		input []string
 		output []string
 	}{
-		{[]string{test_db, "test_user", "test_id"},
-		 []string{"test_user", "test_id"}},
+		{[]string{test_db, "test_user", "1234"},
+		 []string{"test_user", "1234"}},
 	}
 
 	for _, c := range es {
@@ -79,22 +80,24 @@ func TestAddDeleteUser(t *testing.T) {
 
 		logger_helper.LogTestStep(fmt.Sprintf("Create test user %s",
 											  c.input[1]))
-		AddUser(c.input[0], "users", c.input[1], c.input[2])
+		input_id, _ := strconv.Atoi(c.input[2])
+		AddUser(c.input[0], "users", c.input[1], input_id)
 
 		logger_helper.LogTestStep("Verify user was created with success")
 		usernames, user_ids := GetUsers(c.input[0], "users")
-		if usernames[0] != c.output[0] || user_ids[0] != c.output[1] {
-			t.Errorf("User was not created: (%s, %s) != (%s, %s)", c.output[0],
+		output_id, _ := strconv.Atoi(c.output[1])
+		if usernames[0] != c.output[0] || user_ids[0] != output_id {
+			t.Errorf("User was not created: (%s, %s) != (%s, %d)", c.output[0],
 					 c.output[1], usernames[0], user_ids[0])
 		}
 
 		logger_helper.LogTestStep("Delete test user")
-		DeleteUser(c.input[0], "users", c.input[2])
+		DeleteUser(c.input[0], "users", input_id)
 
 		logger_helper.LogTestStep("Verify user was deleted with success")
 		usernames, user_ids = GetUsers(c.input[0], "users")
 		if len(usernames) > 0 {
-			t.Errorf("User was not deleted: (%s, %s)", usernames[0],
+			t.Errorf("User was not deleted: (%s, %d)", usernames[0],
 					 user_ids[0])
 		}
 	}

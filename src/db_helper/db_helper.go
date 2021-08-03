@@ -45,7 +45,7 @@ func InitDb(db_name string, table_name string) int {
 
 
 func AddUser(db_name string, table_name string,
-			 username string, user_id string) int {
+			 username string, user_id int) int {
 	logger_helper.LogInfo(fmt.Sprintf("Creating user %s...", username))
 	db, err := sql.Open("sqlite3", db_name)
 	if err != nil {
@@ -78,8 +78,8 @@ func AddUser(db_name string, table_name string,
 }
 
 
-func DeleteUser(db_name string, table_name string, user_id string) int {
-	logger_helper.LogInfo(fmt.Sprintf("Deleting user %s...", user_id))
+func DeleteUser(db_name string, table_name string, user_id int) int {
+	logger_helper.LogInfo(fmt.Sprintf("Deleting user %d...", user_id))
 	db, err := sql.Open("sqlite3", db_name)
 	if err != nil {
 		logger_helper.LogError(fmt.Sprintf("Failed to connect to db %s",
@@ -110,7 +110,7 @@ func DeleteUser(db_name string, table_name string, user_id string) int {
 }
 
 
-func GetUsers(db_name string, table_name string) ([]string, []string) {
+func GetUsers(db_name string, table_name string) ([]string, []int) {
 	logger_helper.LogInfo(fmt.Sprintf("Querying users ..."))
 	db, err := sql.Open("sqlite3", db_name)
 	if err != nil {
@@ -127,8 +127,10 @@ func GetUsers(db_name string, table_name string) ([]string, []string) {
 		return nil, nil
 	}
 
-	var username, user_id, uid string
-	var usernames, user_ids []string
+	var username, uid string
+	var user_id int
+	var usernames []string
+	var user_ids []int
 	for rows.Next() {
 		err = rows.Scan(&uid, &username, &user_id)
 		if err != nil {

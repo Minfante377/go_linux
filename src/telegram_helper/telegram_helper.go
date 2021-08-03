@@ -228,7 +228,7 @@ func InitBot(token string, user int) int {
 func DeleteBot(user int) int {
 	var index int = getIndexByUser(user)
 	if index < 0 {
-		logger_helper.LogError(fmt.Sprintf("Bot for user %s not found", user))
+		logger_helper.LogError(fmt.Sprintf("Bot for user %d not found", user))
 		return -1
 	}
 	bots[index].working = 0
