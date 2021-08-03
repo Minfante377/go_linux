@@ -1,10 +1,11 @@
 package main
 
 import (
+	"db_helper"
 	"fmt"
 	"logger_helper"
 	"os"
-	"strconv"
+	"server_helper"
 	"telegram_helper"
 	"time"
 )
@@ -15,7 +16,7 @@ var Pass string = ""
 var Debug string = ""
 var Scripts string = "scripts"
 var TelegramToken string = ""
-var User string = ""
+
 
 func init() {
 	var filepath string
@@ -35,10 +36,13 @@ func init() {
 
 func main() {
 	logger_helper.LogInfo("Starting...")
-	var user int
-	user, _ = strconv.Atoi(User)
+	db_helper.InitDb("users.db", "users")
 	telegram_helper.InitQueue(TelegramToken)
-	telegram_helper.InitBot(TelegramToken, user)
+	usernames, user_ids := db_helper.GetUsers("users.db", "users")
+	for i := range usernames {
+		telegram_helper.InitBot(TelegramToken, usernames[i], user_ids[i])
+	}
+	go server_helper.InitServer(":8080", "users.db", "users", TelegramToken)
 	for true {
 		time.Sleep(30 * time.Second)
 		logger_helper.LogInfo("Running...")

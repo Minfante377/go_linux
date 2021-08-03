@@ -43,6 +43,7 @@ type Chat struct {
 type TelegramBot struct {
 	token string
 	user int
+	user_pwd string
 	working int
 }
 
@@ -163,7 +164,7 @@ func handler(bot *TelegramBot) {
 		if msg_id > 0 {
 			var stdout, stderr string
 			var err error
-			err, stdout, stderr = cmd_helper.ExecCmd(msg.Text)
+			err, stdout, stderr = cmd_helper.ExecCmd(msg.Text, &bot.user_pwd)
 			if err != nil {
 				_, err = http.PostForm(
 					fmt.Sprintf(SEND_MSG, bot.token),
@@ -212,15 +213,16 @@ func InitQueue(token string) int {
 	return -1
 }
 
-func InitBot(token string, user int) int {
-	var new_bot *TelegramBot = spawnBot(token, user)
+func InitBot(token string, user_name string, user_id int) int {
+	var new_bot *TelegramBot = spawnBot(token, user_id)
 	if new_bot == nil {
 		logger_helper.LogError(
-			fmt.Sprintf("Failed to start a new bot for user %d", user))
+			fmt.Sprintf("Failed to start a new bot for user %d", user_id))
 		return -1
 	}
 	new_bot.working = 1
-	logger_helper.LogInfo(fmt.Sprintf("Starting bot for user %d", user))
+	logger_helper.LogInfo(fmt.Sprintf("Starting bot for user %d", user_id))
+	new_bot.user_pwd = fmt.Sprintf("/home/%s", user_name)
 	go handler(new_bot)
 	return 0
 }

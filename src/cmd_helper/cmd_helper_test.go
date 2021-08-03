@@ -59,7 +59,7 @@ func TestExecCmd(t *testing.T) {
 	for _, c := range es {
 		var err error
 		var stdout, stderr string
-		err, stdout, stderr = ExecCmd(c.input)
+		err, stdout, stderr = ExecCmd(c.input, nil)
 		if err != nil {
 			t.Errorf("Error executing cmd:\n%s",stderr)
 		}
@@ -93,7 +93,7 @@ func TestSudoExecCmd(t *testing.T) {
 	logger_helper.LogTestStep("Exec command and verify output")
 	for _, c := range es {
 		var res string
-		res = ExecSudoCmd(c.input, os.Getenv("PASS"))
+		res = ExecSudoCmd(c.input, os.Getenv("PASS"), nil)
 		res = strings.Trim(res, "\n")
 		if res != c.expectedOutput {
 			t.Errorf("incorrect output for `%s`: expected `%s` but got `%s`",
@@ -132,7 +132,7 @@ func TestSaveScript(t *testing.T) {
 		logger_helper.LogTestStep("Check script contents")
 		var stdout string
 		err, stdout, _ = ExecCmd(fmt.Sprintf("cat %s/%s.sh", tmp_dir,
-											 test_file))
+											 test_file), nil)
 		if err != nil || c.expectedOutput != stdout {
 			t.Errorf(`Contents of the script %s do not match the expected
 					 ones %s`, stdout, c.expectedOutput)
@@ -167,7 +167,7 @@ func TestExecScript(t *testing.T) {
 		logger_helper.LogTestStep("Exec script and check output")
 		var stdout string
 		err, stdout, _ = ExecScript(fmt.Sprintf("%s/%s.sh", tmp_dir,
-								    test_file))
+								    test_file), nil)
 		if err != nil || c.expectedOutput != stdout {
 			t.Errorf("Script output %s do not match the expected one %s",
 					 stdout, c.expectedOutput)
@@ -202,7 +202,7 @@ func TestExecSudoScript(t *testing.T) {
 		logger_helper.LogTestStep("Exec script and check output")
 		var res string
 		res = ExecSudoScript(fmt.Sprintf("%s/%s.sh", tmp_dir, test_file),
-							 os.Getenv("PASS"))
+							 os.Getenv("PASS"), nil)
 		if err != nil || !strings.Contains(res, c.expectedOutput) {
 			t.Errorf("Script output %s do not match the expected one %s",
 			         res, c.expectedOutput)

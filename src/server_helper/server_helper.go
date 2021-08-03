@@ -57,7 +57,7 @@ func (a *api) addUser(w http.ResponseWriter, r *http.Request) {
 	logger_helper.LogInfo(fmt.Sprintf("Adding user (%s, %d)",
 									  user.Username, user.UserId))
 	db_helper.AddUser(db, table, user.Username, user.UserId)
-	telegram_helper.InitBot(token, user.UserId)
+	telegram_helper.InitBot(token, user.Username, user.UserId)
 	json.NewEncoder(w).Encode(user)
 }
 

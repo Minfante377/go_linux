@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/google/goexpect"
@@ -19,12 +20,18 @@ var (
 )
 
 
-func ExecCmd(command string) (error, string, string) {
+func ExecCmd(command string, pwd_env *string) (error, string, string) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
+	if strings.Contains(command, "cd") {
+		command = fmt.Sprintf("%s;echo -n $PWD", command)
+	}
 	cmd := exec.Command("bash", "-c", command)
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
+	if pwd_env != nil {
+		cmd.Dir = *pwd_env
+	}
 	var msg string
 	msg = fmt.Sprintf("Executing cmd %s", command)
 	logger_helper.LogInfo(msg)
@@ -33,14 +40,22 @@ func ExecCmd(command string) (error, string, string) {
 		var msg string
 		msg = fmt.Sprintf("Error executing cmd %s: %v", command, err)
 		logger_helper.LogError(msg)
+		return err, stdout.String(), stderr.String()
 	}
+	if pwd_env != nil && strings.Contains(command, "cd") {
+		*pwd_env = stdout.String()
+	}
+
 	return err, stdout.String(), stderr.String()
 }
 
 
-func ExecSudoCmd(command string, pass string) (string) {
+func ExecSudoCmd(command string, pass string, pwd_env *string) (string) {
 	var result string
 	logger_helper.LogInfo(fmt.Sprintf("Executing sudo cmd: %s", command))
+	if pwd_env != nil{
+		command = fmt.Sprintf("cd %s; %s", *pwd_env, command)
+	}
 	e, _, err := expect.Spawn(command, -1)
 	if err != nil {
 		logger_helper.LogError(fmt.Sprintf("Could not spawn process %s",
@@ -76,19 +91,19 @@ func SaveScript(path string, data string) error {
 }
 
 
-func ExecScript(path string) (error, string, string) {
+func ExecScript(path string, pwd_env *string) (error, string, string) {
 	var err error
 	var stdout, stderr, cmd string
 	cmd = fmt.Sprintf("/bin/bash %s", path)
-	err, stdout, stderr = ExecCmd(cmd)
+	err, stdout, stderr = ExecCmd(cmd, pwd_env)
 	return err, stdout, stderr
 }
 
 
-func ExecSudoScript(path string, pass string) string {
+func ExecSudoScript(path string, pass string, pwd_env *string) string {
 	var cmd, result string
 	cmd = fmt.Sprintf("sudo /bin/bash %s", path)
-	result = ExecSudoCmd(cmd, pass)
+	result = ExecSudoCmd(cmd, pass, pwd_env)
 	logger_helper.LogInfo(fmt.Sprintf("Result is: %s", result))
 	return result
 }
