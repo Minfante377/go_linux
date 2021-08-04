@@ -2,14 +2,16 @@ package server_helper
 
 import (
 	"db_helper"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"encoding/json"
 	"logger_helper"
 	"net/http"
+	"os"
 	"telegram_helper"
 
 	"github.com/gorilla/mux"
+	"github.com/joho/godotenv"
 )
 
 type api struct {
@@ -57,7 +59,10 @@ func (a *api) addUser(w http.ResponseWriter, r *http.Request) {
 	logger_helper.LogInfo(fmt.Sprintf("Adding user (%s, %d)",
 									  user.Username, user.UserId))
 	db_helper.AddUser(db, table, user.Username, user.UserId)
-	telegram_helper.InitBot(token, user.Username, user.UserId)
+	var go_root string = os.Getenv("GOPATH")
+	godotenv.Load(fmt.Sprintf("%s/.secrets", go_root))
+	telegram_helper.InitBot(token, user.Username, user.UserId,
+						    os.Getenv(user.Username))
 	json.NewEncoder(w).Encode(user)
 }
 

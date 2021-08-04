@@ -9,8 +9,6 @@ import (
 	"regexp"
 	"strings"
 	"time"
-
-	"github.com/google/goexpect"
 )
 
 var (
@@ -51,21 +49,16 @@ func ExecCmd(command string, pwd_env *string) (error, string, string) {
 
 
 func ExecSudoCmd(command string, pass string, pwd_env *string) (string) {
-	var result string
 	logger_helper.LogInfo(fmt.Sprintf("Executing sudo cmd: %s", command))
-	if pwd_env != nil{
-		command = fmt.Sprintf("cd %s; %s", *pwd_env, command)
-	}
-	e, _, err := expect.Spawn(command, -1)
+	command = strings.Replace(command, "sudo", "", 1)
+	command = fmt.Sprintf("echo %s |sudo -S %s", pass, command)
+	err, stdout, stderr := ExecCmd(command, pwd_env)
 	if err != nil {
-		logger_helper.LogError(fmt.Sprintf("Could not spawn process %s",
-							               command))
-		return ""
+		logger_helper.LogError("Failed to execute sudo command")
+		return stderr
 	}
-	e.Expect(passRE, timeout)
-	e.Send(pass + "\n")
-	result, _, err = e.Expect(promptRE, timeout)
-	return result
+	logger_helper.LogInfo("Successfully executed sudo command")
+	return stdout
 }
 
 

@@ -8,11 +8,12 @@ import (
 	"server_helper"
 	"telegram_helper"
 	"time"
+
+	"github.com/joho/godotenv"
 )
 
 var LogDir string = "logs"
 var Version string = ""
-var Pass string = ""
 var Debug string = ""
 var Scripts string = "scripts"
 var TelegramToken string = ""
@@ -39,8 +40,11 @@ func main() {
 	db_helper.InitDb("users.db", "users")
 	telegram_helper.InitQueue(TelegramToken)
 	usernames, user_ids := db_helper.GetUsers("users.db", "users")
+	var go_root string = os.Getenv("GOPATH")
+	godotenv.Load(fmt.Sprintf("%s/.secrets", go_root))
 	for i := range usernames {
-		telegram_helper.InitBot(TelegramToken, usernames[i], user_ids[i])
+		telegram_helper.InitBot(TelegramToken, usernames[i], user_ids[i],
+							    os.Getenv(usernames[i]))
 	}
 	go server_helper.InitServer(":8080", "users.db", "users", TelegramToken)
 	for true {

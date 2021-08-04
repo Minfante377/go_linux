@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -18,11 +19,14 @@ const (
 	PROCESS time.Duration = 1 * time.Second
 	GET_UPDATES string = "https://api.telegram.org/bot%s/getUpdates?offset=%d"
 	SEND_MSG string = "https://api.telegram.org/bot%s/sendMessage"
+	HELP string = "/help"
+	EXEC_SCRIPT string = "/script"
+	LIST string = "/list"
 )
 
 type Update struct {
 	Result []Result     `json:"result"`
-	Ok bool 			`json:"ok"`
+	Ok bool			`json:"ok"`
 }
 
 type Result struct {
@@ -31,7 +35,7 @@ type Result struct {
 }
 
 type Message struct {
-	MessageId int 	  `json:"message_id"`
+	MessageId int	  `json:"message_id"`
 	Chat     Chat     `json:"chat"`
 	Text     string   `json:"text"`
 }
@@ -44,6 +48,7 @@ type TelegramBot struct {
 	token string
 	user int
 	user_pwd string
+	user_pass string
 	working int
 }
 
@@ -124,7 +129,7 @@ func start_listening() {
 
 func get_msg(user int) (int, *Message) {
 	queue.mu.Lock()
-	for index, _ := range queue.msgs {
+	for index := range queue.msgs {
 		if queue.msgs[index].Chat.Id == user {
 			queue.mu.Unlock()
 			return queue.msgs[index].MessageId, &queue.msgs[index]
@@ -155,6 +160,55 @@ func delete_msg(message_id int) {
 }
 
 
+func sendMsg(chat_id int, text string, token string) error {
+	var err error
+	logger_helper.LogInfo(fmt.Sprintf("Sending msg to %d", chat_id))
+	_, err = http.PostForm(
+		fmt.Sprintf(SEND_MSG, token),
+		url.Values{
+		"chat_id": {strconv.Itoa(chat_id)},
+		"text": {text},
+		})
+	if err != nil {
+		logger_helper.LogError(fmt.Sprintf("Error sending msg: %s",
+										   err.Error()))
+	}
+	return err
+}
+
+
+func sendHelp(token string, chat_id int) error {
+	sendMsg(chat_id, "Help not implemented", token)
+	return nil
+}
+
+
+func listScripts(token string, chat_id int) error {
+	sendMsg(chat_id, "Listscripts not implemented", token)
+	return nil
+}
+
+
+func execCmd(msg string, token string, chat_id int, pass string,
+	user_pwd *string) error {
+	var err error
+	if strings.Contains(msg, "sudo") {
+		var result string
+		result = cmd_helper.ExecSudoCmd(msg, pass, user_pwd)
+		err = sendMsg(chat_id, result, token)
+	} else {
+		var stdout, stderr string
+		err, stdout, stderr = cmd_helper.ExecCmd(msg, user_pwd)
+		if err != nil {
+			err = sendMsg(chat_id, stderr, token)
+		} else {
+			err = sendMsg(chat_id, stdout, token)
+		}
+	}
+	return err
+}
+
+
 func handler(bot *TelegramBot) {
 	for true {
 		if bot.working < 1 {
@@ -162,27 +216,16 @@ func handler(bot *TelegramBot) {
 		}
 		msg_id, msg := get_msg(bot.user)
 		if msg_id > 0 {
-			var stdout, stderr string
 			var err error
-			err, stdout, stderr = cmd_helper.ExecCmd(msg.Text, &bot.user_pwd)
-			if err != nil {
-				_, err = http.PostForm(
-					fmt.Sprintf(SEND_MSG, bot.token),
-					url.Values{
-					"chat_id": {strconv.Itoa(msg.Chat.Id)},
-					"text": {stderr},
-					})
+			if strings.Contains(msg.Text, HELP){
+				err = sendHelp(bot.token, msg.Chat.Id)
+			}else if strings.Contains(msg.Text, LIST){
+				err = listScripts(bot.token, msg.Chat.Id)
 			}else{
-				_, err = http.PostForm(
-				fmt.Sprintf(SEND_MSG, bot.token),
-					url.Values{
-						"chat_id": {strconv.Itoa(msg.Chat.Id)},
-						"text":    {stdout},
-					})
+				err = execCmd(msg.Text, bot.token, msg.Chat.Id,
+							  bot.user_pass, &bot.user_pwd)
 			}
-			if err != nil {
-				logger_helper.LogError("Error sending msg")
-			} else {
+			if err == nil {
 				delete_msg(msg_id)
 			}
 		}
@@ -202,18 +245,22 @@ func getIndexByUser(user int) int {
 }
 
 func InitQueue(token string) int {
+	queue.mu.Lock()
 	if queue.running != 1 {
 		queue.running = 1
 		queue.token = token
 		queue.update_id = 0
 		go start_listening()
+		queue.mu.Unlock()
 		return 0
 	}
 	logger_helper.LogError("Queue was already running")
+	queue.mu.Unlock()
 	return -1
 }
 
-func InitBot(token string, user_name string, user_id int) int {
+func InitBot(token string, user_name string, user_id int,
+			 user_pass string) int {
 	var new_bot *TelegramBot = spawnBot(token, user_id)
 	if new_bot == nil {
 		logger_helper.LogError(
@@ -223,6 +270,7 @@ func InitBot(token string, user_name string, user_id int) int {
 	new_bot.working = 1
 	logger_helper.LogInfo(fmt.Sprintf("Starting bot for user %d", user_id))
 	new_bot.user_pwd = fmt.Sprintf("/home/%s", user_name)
+	new_bot.user_pass = user_pass
 	go handler(new_bot)
 	return 0
 }
