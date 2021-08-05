@@ -1,4 +1,6 @@
 *.swp
+*.db
+test_logs
 bin
 logs
 scripts
