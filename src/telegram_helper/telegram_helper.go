@@ -20,6 +20,8 @@ const (
 	GET_UPDATES string = "https://api.telegram.org/bot%s/getUpdates?offset=%d"
 	SEND_MSG string = "https://api.telegram.org/bot%s/sendMessage"
 	HELP string = "/help"
+	HELP_MSG string = "/list List available scripts.\n"+
+					  "/script <script_name> Execute <script_name>.\n"
 	EXEC_SCRIPT string = "/script"
 	LIST string = "/list"
 )
@@ -178,7 +180,7 @@ func sendMsg(chat_id int, text string, token string) error {
 
 
 func sendHelp(token string, chat_id int) error {
-	sendMsg(chat_id, "Help not implemented", token)
+	sendMsg(chat_id, HELP_MSG, token)
 	return nil
 }
 
