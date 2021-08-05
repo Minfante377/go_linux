@@ -7,6 +7,7 @@ import (
 	"logger_helper"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -186,7 +187,11 @@ func sendHelp(token string, chat_id int) error {
 
 
 func listScripts(token string, chat_id int) error {
-	sendMsg(chat_id, "Listscripts not implemented", token)
+	var go_root string = os.Getenv("GOPATH")
+	var cmd string = fmt.Sprintf("ls %s/scripts", go_root)
+	var stdout string
+	_, stdout, _ = cmd_helper.ExecCmd(cmd, nil)
+	sendMsg(chat_id, fmt.Sprintf("Available scripts:\n%s", stdout), token)
 	return nil
 }
 
