@@ -93,7 +93,7 @@ func TestSudoExecCmd(t *testing.T) {
 	logger_helper.LogTestStep("Exec command and verify output")
 	for _, c := range es {
 		var res string
-		res = ExecSudoCmd(c.input, os.Getenv("PASS"), nil)
+		res = ExecSudoCmd(c.input, os.Getenv(os.Getenv("USER")), nil)
 		res = strings.Trim(res, "\n")
 		if res != c.expectedOutput {
 			t.Errorf("incorrect output for `%s`: expected `%s` but got `%s`",
@@ -202,7 +202,7 @@ func TestExecSudoScript(t *testing.T) {
 		logger_helper.LogTestStep("Exec script and check output")
 		var res string
 		res = ExecSudoScript(fmt.Sprintf("%s/%s.sh", tmp_dir, test_file),
-							 os.Getenv("PASS"), nil)
+							 os.Getenv(os.Getenv("USER")), nil)
 		if err != nil || !strings.Contains(res, c.expectedOutput) {
 			t.Errorf("Script output %s do not match the expected one %s",
 			         res, c.expectedOutput)

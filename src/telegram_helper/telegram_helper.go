@@ -215,6 +215,33 @@ func execCmd(msg string, token string, chat_id int, pass string,
 	return err
 }
 
+func execScript(msg string, token string, user_id int, pass string) error {
+	var err error
+	var command, go_root string
+	var args []string
+	go_root = os.Getenv("GOPATH")
+	msg = strings.Replace(msg, "\n", "", 1)
+	args = strings.Split(msg, " ")
+	if strings.Contains(msg, "sudo") {
+		var result string
+		command = fmt.Sprintf("%s/scripts/%s %d %s %s", go_root, args[2],
+							  user_id, token, args[3])
+		result = cmd_helper.ExecSudoScript(command, pass, nil)
+		err = sendMsg(user_id, result, token)
+	} else {
+		var stdout, stderr string
+		command = fmt.Sprintf("%s/scripts/%s %d %s %s", go_root, args[1],
+							  user_id, token, args[2])
+		err, stdout, stderr = cmd_helper.ExecScript(command, nil)
+		if err != nil {
+			err = sendMsg(user_id, stderr, token)
+		} else {
+			err = sendMsg(user_id, stdout, token)
+		}
+	}
+	return err
+}
+
 
 func handler(bot *TelegramBot) {
 	for true {
@@ -228,6 +255,9 @@ func handler(bot *TelegramBot) {
 				err = sendHelp(bot.token, msg.Chat.Id)
 			}else if strings.Contains(msg.Text, LIST){
 				err = listScripts(bot.token, msg.Chat.Id)
+			}else if strings.Contains(msg.Text, EXEC_SCRIPT) {
+				err = execScript(msg.Text, bot.token, msg.Chat.Id,
+								 bot.user_pass)
 			}else{
 				err = execCmd(msg.Text, bot.token, msg.Chat.Id,
 							  bot.user_pass, &bot.user_pwd)
