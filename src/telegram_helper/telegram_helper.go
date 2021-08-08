@@ -93,7 +93,6 @@ func spawnBot(token string, user int) *TelegramBot {
 
 
 func parseResponse(r *http.Response, update *Update) (error) {
-	defer r.Body.Close()
 	if err := json.NewDecoder(r.Body).Decode(update); err != nil {
 		logger_helper.LogError(
 			fmt.Sprintf("could not decode incoming update %s", err.Error()))
