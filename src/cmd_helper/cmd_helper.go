@@ -22,16 +22,17 @@ func ExecCmd(command string, pwd_env *string,
 			 user string, pass string) (error, string, string) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
-	if strings.Contains(command, "cd") {
-		command = fmt.Sprintf("%s;echo -n $PWD", command)
+	var aux string
+	aux = command
+	if pwd_env != nil{
+		command = fmt.Sprintf(`echo %s | su - %s -c "cd %s;%s;pwd"`, pass,
+							  user, *pwd_env, command)
+	} else {
+		command = fmt.Sprintf(`echo %s | su - %s -c "%s"`, pass, user, command)
 	}
-	command = fmt.Sprintf(`echo %s | su -c "%s" %s`, pass, command, user)
 	cmd := exec.Command("bash", "-c", command)
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
-	if pwd_env != nil {
-		cmd.Dir = *pwd_env
-	}
 	var msg string
 	msg = fmt.Sprintf("Executing cmd %s", command)
 	logger_helper.LogInfo(msg)
@@ -42,11 +43,12 @@ func ExecCmd(command string, pwd_env *string,
 		logger_helper.LogError(msg)
 		return err, stdout.String(), stderr.String()
 	}
-	if pwd_env != nil && strings.Contains(command, "cd") {
-		*pwd_env = stdout.String()
+	var output []string = strings.Split(stdout.String(), "\n")
+	if pwd_env != nil && strings.Contains(aux, "cd") {
+		*pwd_env = output[0]
 	}
-
-	return err, stdout.String(), stderr.String()
+	var res string = strings.Join(output[:len(output) - 2], "\n")
+	return err, res, stderr.String()
 }
 
 
