@@ -113,7 +113,7 @@ func start_listening() {
 		var err error
 		r, err := netClient.Get(fmt.Sprintf(GET_UPDATES, queue.token,
 								queue.update_id))
-		defer r.Body.Close()
+
 		err = parseResponse(r, &update)
 		if err == nil && update.Ok {
 			logger_helper.LogInfo("New messages available")
