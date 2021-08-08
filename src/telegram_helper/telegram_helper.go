@@ -116,9 +116,9 @@ func start_listening() {
 
 		err = parseResponse(r, &update)
 		if err == nil && update.Ok {
-			logger_helper.LogInfo("New messages available")
 			queue.mu.Lock()
 			for _, result := range update.Result {
+				logger_helper.LogInfo("New messages available")
 				queue.msgs = append(queue.msgs, result.Message)
 				if queue.update_id <= result.UpdateId {
 					queue.update_id = result.UpdateId + 1

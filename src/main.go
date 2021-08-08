@@ -48,7 +48,7 @@ func main() {
 	}
 	go server_helper.InitServer(":8080", "users.db", "users", TelegramToken)
 	for true {
-		time.Sleep(30 * time.Second)
+		time.Sleep(3600 * time.Second)
 		logger_helper.LogInfo("Running...")
 	}
 }
