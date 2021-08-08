@@ -50,6 +50,7 @@ type Chat struct {
 type TelegramBot struct {
 	token string
 	user int
+	user_name string
 	user_pwd string
 	user_pass string
 	working int
@@ -186,26 +187,27 @@ func sendHelp(token string, chat_id int) error {
 }
 
 
-func listScripts(token string, chat_id int) error {
+func listScripts(token string, chat_id int, user string, pass string) error {
 	var go_root string = os.Getenv("GOPATH")
 	var cmd string = fmt.Sprintf("ls %s/scripts", go_root)
 	var stdout string
-	_, stdout, _ = cmd_helper.ExecCmd(cmd, nil)
+	_, stdout, _ = cmd_helper.ExecCmd(cmd, nil, user, pass)
 	sendMsg(chat_id, fmt.Sprintf("Available scripts:\n%s", stdout), token)
 	return nil
 }
 
 
 func execCmd(msg string, token string, chat_id int, pass string,
-	user_pwd *string) error {
+	user_pwd *string, user_name string) error {
 	var err error
 	if strings.Contains(msg, "sudo") {
 		var result string
-		result = cmd_helper.ExecSudoCmd(msg, pass, user_pwd)
+		result = cmd_helper.ExecSudoCmd(msg, pass, user_pwd, user_name)
 		err = sendMsg(chat_id, result, token)
 	} else {
 		var stdout, stderr string
-		err, stdout, stderr = cmd_helper.ExecCmd(msg, user_pwd)
+		err, stdout, stderr = cmd_helper.ExecCmd(msg, user_pwd, user_name,
+												 pass)
 		if err != nil {
 			err = sendMsg(chat_id, stderr, token)
 		} else {
@@ -215,7 +217,8 @@ func execCmd(msg string, token string, chat_id int, pass string,
 	return err
 }
 
-func execScript(msg string, token string, user_id int, pass string) error {
+func execScript(msg string, token string, user_id int, pass string,
+				user_name string) error {
 	var err error
 	var command, go_root string
 	var args []string
@@ -226,13 +229,14 @@ func execScript(msg string, token string, user_id int, pass string) error {
 		var result string
 		command = fmt.Sprintf("%s/scripts/%s %d %s %s", go_root, args[2],
 							  user_id, token, args[3])
-		result = cmd_helper.ExecSudoScript(command, pass, nil)
+		result = cmd_helper.ExecSudoScript(command, pass, nil, user_name)
 		err = sendMsg(user_id, result, token)
 	} else {
 		var stdout, stderr string
 		command = fmt.Sprintf("%s/scripts/%s %d %s %s", go_root, args[1],
 							  user_id, token, args[2])
-		err, stdout, stderr = cmd_helper.ExecScript(command, nil)
+		err, stdout, stderr = cmd_helper.ExecScript(command, nil, user_name,
+													pass)
 		if err != nil {
 			err = sendMsg(user_id, stderr, token)
 		} else {
@@ -254,13 +258,14 @@ func handler(bot *TelegramBot) {
 			if strings.Contains(msg.Text, HELP){
 				err = sendHelp(bot.token, msg.Chat.Id)
 			}else if strings.Contains(msg.Text, LIST){
-				err = listScripts(bot.token, msg.Chat.Id)
+				err = listScripts(bot.token, msg.Chat.Id, bot.user_name,
+								  bot.user_pass)
 			}else if strings.Contains(msg.Text, EXEC_SCRIPT) {
 				err = execScript(msg.Text, bot.token, msg.Chat.Id,
-								 bot.user_pass)
+								 bot.user_pass, bot.user_name)
 			}else{
 				err = execCmd(msg.Text, bot.token, msg.Chat.Id,
-							  bot.user_pass, &bot.user_pwd)
+							  bot.user_pass, &bot.user_pwd, bot.user_name)
 			}
 			if err == nil {
 				delete_msg(msg_id)
@@ -308,6 +313,7 @@ func InitBot(token string, user_name string, user_id int,
 	logger_helper.LogInfo(fmt.Sprintf("Starting bot for user %d", user_id))
 	new_bot.user_pwd = fmt.Sprintf("/home/%s", user_name)
 	new_bot.user_pass = user_pass
+	new_bot.user_name = user_name
 	go handler(new_bot)
 	return 0
 }
