@@ -4,6 +4,7 @@ import(
 	"fmt"
 	"log"
 	"os"
+	"sync"
 	"time"
 )
 
@@ -12,6 +13,7 @@ const(
 )
 
 var debug_mode string = ""
+var log_mu sync.Mutex
 
 func SetLogFile(filepath string, debug string) int {
 	file, err := os.OpenFile(filepath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
@@ -26,7 +28,9 @@ func SetLogFile(filepath string, debug string) int {
 
 func LogInfo(msg string) {
 	var dt string = time.Now().Format(layout)
+	log_mu.Lock()
 	log.Printf("[INFO - %s]: %s\n", dt, msg)
+	log_mu.Unlock()
 	if debug_mode == "true" {
 		fmt.Printf("[INFO - %s]: %s\n", dt, msg)
 	}
@@ -35,7 +39,9 @@ func LogInfo(msg string) {
 
 func LogError(msg string) {
 	var dt string = time.Now().Format(layout)
+	log_mu.Lock()
 	log.Printf("[ERROR - %s]: %s\n", dt, msg)
+	log_mu.Unlock()
 	if debug_mode == "true" {
 		fmt.Printf("[ERROR - %s]: %s\n", dt, msg)
 	}
