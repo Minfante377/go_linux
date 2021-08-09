@@ -14,10 +14,11 @@ import (
 
 const (
 	log_dir string = "test_logs/cmd_helper"
-	tmp_dir string = "tmp"
+	tmp_dir string = "./tmp"
 	test_file string = "test_file"
 )
 
+var pwd_user string
 
 func init() {
 	var go_root string = os.Getenv("GOPATH")
@@ -33,6 +34,7 @@ func init() {
 		panic("Could not set logger log file!")
 	}
 	godotenv.Load(fmt.Sprintf("%s/.secrets", go_root))
+	pwd_user = os.Getenv("PWD")
 	logger_helper.LogTestStep(fmt.Sprintf("Testing: %s", filename))
 }
 
@@ -59,7 +61,7 @@ func TestExecCmd(t *testing.T) {
 	for _, c := range es {
 		var err error
 		var stdout, stderr string
-		err, stdout, stderr = ExecCmd(c.input, nil, os.Getenv("USER"),
+		err, stdout, stderr = ExecCmd(c.input, &pwd_user, os.Getenv("USER"),
 									  os.Getenv(os.Getenv("USER")))
 		if err != nil {
 			t.Errorf("Error executing cmd:\n%s",stderr)
@@ -94,7 +96,7 @@ func TestSudoExecCmd(t *testing.T) {
 	logger_helper.LogTestStep("Exec command and verify output")
 	for _, c := range es {
 		var res string
-		res = ExecSudoCmd(c.input, os.Getenv(os.Getenv("USER")), nil,
+		res = ExecSudoCmd(c.input, os.Getenv(os.Getenv("USER")), &pwd_user,
 						  os.Getenv("USER"))
 		res = strings.Trim(res, "\n")
 		if res != c.expectedOutput {
@@ -134,7 +136,7 @@ func TestSaveScript(t *testing.T) {
 		logger_helper.LogTestStep("Check script contents")
 		var stdout string
 		err, stdout, _ = ExecCmd(fmt.Sprintf("cat %s/%s.sh", tmp_dir,
-											 test_file), nil,
+											 test_file), &pwd_user,
 											 os.Getenv("USER"),
 										 	 os.Getenv(os.Getenv("USER")))
 		if err != nil || c.expectedOutput != stdout {
@@ -171,7 +173,7 @@ func TestExecScript(t *testing.T) {
 		logger_helper.LogTestStep("Exec script and check output")
 		var stdout string
 		err, stdout, _ = ExecScript(fmt.Sprintf("%s/%s.sh", tmp_dir,
-								    test_file), nil, os.Getenv("USER"),
+								    test_file), &pwd_user, os.Getenv("USER"),
 									os.Getenv(os.Getenv("USER")))
 		if err != nil || c.expectedOutput != stdout {
 			t.Errorf("Script output %s do not match the expected one %s",
@@ -207,7 +209,7 @@ func TestExecSudoScript(t *testing.T) {
 		logger_helper.LogTestStep("Exec script and check output")
 		var res string
 		res = ExecSudoScript(fmt.Sprintf("%s/%s.sh", tmp_dir, test_file),
-							 os.Getenv(os.Getenv("USER")), nil,
+							 os.Getenv(os.Getenv("USER")), &pwd_user,
 							 os.Getenv("USER"))
 		if err != nil || !strings.Contains(res, c.expectedOutput) {
 			t.Errorf("Script output %s do not match the expected one %s",
