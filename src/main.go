@@ -17,7 +17,9 @@ var Version string = ""
 var Debug string = ""
 var Scripts string = "scripts"
 var TelegramToken string = ""
-
+var Admin string = ""
+var db_name string = "users.db"
+var table_name string = "users"
 
 func init() {
 	var filepath string
@@ -29,6 +31,8 @@ func init() {
 	if rc != 0 {
 		panic("Could not set logger log file!")
 	}
+	telegram_helper.SetAdmin(Admin)
+	telegram_helper.SetDb(db_name, table_name)
 	var msg string
 	msg = fmt.Sprintf("Version: %s", Version)
 	logger_helper.LogInfo(msg)
@@ -37,7 +41,7 @@ func init() {
 
 func main() {
 	logger_helper.LogInfo("Starting...")
-	db_helper.InitDb("users.db", "users")
+	db_helper.InitDb(db_name, table_name)
 	telegram_helper.InitQueue(TelegramToken)
 	usernames, user_ids := db_helper.GetUsers("users.db", "users")
 	var go_root string = os.Getenv("GOPATH")

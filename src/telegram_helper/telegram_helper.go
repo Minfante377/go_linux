@@ -2,6 +2,7 @@ package telegram_helper
 
 import (
 	"cmd_helper"
+	"db_helper"
 	"encoding/json"
 	"fmt"
 	"logger_helper"
@@ -23,9 +24,15 @@ const (
 	HELP string = "/help"
 	HELP_MSG string = "/list List available scripts.\n"+
 					  "/script <script_name> Execute <script_name>.\n"
+	DEFAULT_MSG string = "You are not allowed to chat with me. Your "+
+	                     "message will be forwarded to the administrator."
 	EXEC_SCRIPT string = "/script"
 	LIST string = "/list"
 )
+
+var admin int
+var db string
+var table string
 
 type Update struct {
 	Result []Result     `json:"result"`
@@ -142,6 +149,28 @@ func get_msg(user int) (int, *Message) {
 	return -1, nil
 }
 
+func get_non_user_msg() (int, *Message) {
+	var ids []int
+	_, ids = db_helper.GetUsers(db, table)
+	queue.mu.Lock()
+	for index := range queue.msgs {
+		var flag bool = false
+		var id int = queue.msgs[index].Chat.Id
+		for _, value := range ids {
+			if value == id {
+				flag = true
+				break
+			}
+		}
+		if !flag {
+			queue.mu.Unlock()
+			return queue.msgs[index].MessageId, &queue.msgs[index]
+		}
+	}
+	queue.mu.Unlock()
+	return -1, nil
+}
+
 
 func delete_msg(message_id int) {
 	queue.mu.Lock()
@@ -182,6 +211,14 @@ func sendMsg(chat_id int, text string, token string) error {
 
 func sendHelp(token string, chat_id int) error {
 	sendMsg(chat_id, HELP_MSG, token)
+	return nil
+}
+
+
+func sendDefault(message string, token string, chat_id int) error {
+	sendMsg(chat_id, DEFAULT_MSG, token)
+	var msg string = fmt.Sprintf("New message from %d: %s", chat_id, message)
+	sendMsg(admin, msg, token)
 	return nil
 }
 
@@ -285,6 +322,24 @@ func getIndexByUser(user int) int {
 	return -1
 }
 
+
+func default_handler(token string) {
+	var msg_id int
+	var msg *Message
+	var err error
+	for true {
+		msg_id, msg = get_non_user_msg()
+		if msg_id > 0 {
+			err = sendDefault(msg.Text, token, msg.Chat.Id)
+			if err == nil {
+				delete_msg(msg_id)
+			}
+		}
+		time.Sleep(PROCESS)
+	}
+}
+
+
 func InitQueue(token string) int {
 	queue.mu.Lock()
 	if queue.running != 1 {
@@ -292,6 +347,7 @@ func InitQueue(token string) int {
 		queue.token = token
 		queue.update_id = 0
 		go start_listening()
+		go default_handler(token)
 		queue.mu.Unlock()
 		return 0
 	}
@@ -317,6 +373,7 @@ func InitBot(token string, user_name string, user_id int,
 	return 0
 }
 
+
 func DeleteBot(user int) int {
 	var index int = getIndexByUser(user)
 	if index < 0 {
@@ -329,4 +386,15 @@ func DeleteBot(user int) int {
 	}
 	bot_count -= 1
 	return 0
+}
+
+
+func SetAdmin(admin_id string) {
+	admin, _ = strconv.Atoi(admin_id)
+}
+
+
+func SetDb(db_name string, table_name string) {
+	db = db_name
+	table = table_name
 }

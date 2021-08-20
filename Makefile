@@ -12,7 +12,7 @@ ifeq ($(DEBUG),true)
 	RACE_FLAG="-race"
 endif
 
-LDFLAGS=-ldflags "-X=main.Version=$(VERSION) -X=main.Debug=$(DEBUG) -X=main.LogDir=$(LOG_DIR) -X=main.Scripts=$(SCRIPTS) -X=main.TelegramToken=$(TELEGRAM_TOKEN)"
+LDFLAGS=-ldflags "-X=main.Version=$(VERSION) -X=main.Debug=$(DEBUG) -X=main.LogDir=$(LOG_DIR) -X=main.Scripts=$(SCRIPTS) -X=main.TelegramToken=$(TELEGRAM_TOKEN) -X=main.Admin=$(ADMIN)"
 
 install:
 	go get -d ./...
