@@ -44,6 +44,7 @@ func main() {
 	db_helper.InitDb(db_name, table_name)
 	telegram_helper.InitQueue(TelegramToken)
 	usernames, user_ids := db_helper.GetUsers("users.db", "users")
+	os.Setenv("GOPATH", os.Getenv("PWD"))
 	var go_root string = os.Getenv("GOPATH")
 	godotenv.Load(fmt.Sprintf("%s/.secrets", go_root))
 	for i := range usernames {
