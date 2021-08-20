@@ -16,6 +16,7 @@ multiple users. Configuration is aimed to be simple.
 
   - TELEGRAM_TOKEN=YOUR BOT TOKEN
   - USER=USER SUDO PASSWORD
+  - ADMIN=ADMIN TELEGRAM ID
 - Execute make run to directly run the application or make build to build the
   executable.
 
