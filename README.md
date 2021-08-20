@@ -19,4 +19,8 @@ multiple users. Configuration is aimed to be simple.
 - Execute make run to directly run the application or make build to build the
   executable.
 
+## TBD
+
+- Use a better DB engine.
+- Add more scripts.
 # Work in progress...

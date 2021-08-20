@@ -111,7 +111,6 @@ func DeleteUser(db_name string, table_name string, user_id int) int {
 
 
 func GetUsers(db_name string, table_name string) ([]string, []int) {
-	logger_helper.LogInfo(fmt.Sprintf("Querying users ..."))
 	db, err := sql.Open("sqlite3", db_name)
 	if err != nil {
 		logger_helper.LogError(fmt.Sprintf("Failed to connect to db %s",
@@ -142,7 +141,5 @@ func GetUsers(db_name string, table_name string) ([]string, []int) {
 		user_ids = append(user_ids, user_id)
 	}
 
-	logger_helper.LogInfo(fmt.Sprintf("Users queried: ([%v], [%v])",
-									  usernames, user_ids))
 	return usernames, user_ids
 }
