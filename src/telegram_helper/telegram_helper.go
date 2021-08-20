@@ -263,16 +263,16 @@ func execScript(msg string, token string, user_id int, pass string,
 	args = strings.Split(msg, " ")
 	if strings.Contains(msg, "sudo") {
 		var result string
-		user_arg = args[3:]
-		command = fmt.Sprintf("%s/scripts/%s %d %s %s", go_root, args[2],
+		user_arg = args[3:len(args)]
+		command = fmt.Sprintf(`%s/scripts/%s %d %s "%s"`, go_root, args[2],
 							  user_id, token, user_arg)
 		result = cmd_helper.ExecSudoScript(command, pass, nil, user_name)
 		err = sendMsg(user_id, result, token)
 	} else {
 		var stdout, stderr string
-		user_arg = args[2:]
+		user_arg = args[2:len(args)]
 		logger_helper.LogInfo(fmt.Sprintf("User arg:%s", user_arg))
-		command = fmt.Sprintf("%s/scripts/%s %d %s %s", go_root, args[1],
+		command = fmt.Sprintf(`%s/scripts/%s %d %s "%s"`, go_root, args[1],
 							  user_id, token, user_arg)
 		err, stdout, stderr = cmd_helper.ExecScript(command, nil, user_name,
 													pass)
