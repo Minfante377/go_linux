@@ -4,7 +4,6 @@ import(
 	"fmt"
 	"log"
 	"os"
-	"sync"
 	"time"
 )
 
@@ -13,10 +12,19 @@ const(
 )
 
 var debug_mode string = ""
-var log_mu sync.Mutex
+var log_chan chan string = make(chan string, 100)
+
+
+func write() {
+	if len(log_chan) > 0{
+		log.Print(<-log_chan)
+	}
+}
+
 
 func SetLogFile(filepath string, debug string) int {
-	file, err := os.OpenFile(filepath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	file, err := os.OpenFile(filepath, os.O_APPEND|os.O_CREATE|os.O_WRONLY,
+							 0666)
 	if err != nil {
 		return -1
 	}
@@ -28,9 +36,9 @@ func SetLogFile(filepath string, debug string) int {
 
 func LogInfo(msg string) {
 	var dt string = time.Now().Format(layout)
-	log_mu.Lock()
-	log.Printf("[INFO - %s]: %s\n", dt, msg)
-	log_mu.Unlock()
+	var log_msg string = fmt.Sprintf("[INFO - %s]: %s\n", dt, msg)
+	log_chan <- log_msg
+	go write()
 	if debug_mode == "true" {
 		fmt.Printf("[INFO - %s]: %s\n", dt, msg)
 	}
@@ -39,9 +47,9 @@ func LogInfo(msg string) {
 
 func LogError(msg string) {
 	var dt string = time.Now().Format(layout)
-	log_mu.Lock()
-	log.Printf("[ERROR - %s]: %s\n", dt, msg)
-	log_mu.Unlock()
+	var log_msg string = fmt.Sprintf("[INFO - %s]: %s\n", dt, msg)
+	log_chan <- log_msg
+	go write()
 	if debug_mode == "true" {
 		fmt.Printf("[ERROR - %s]: %s\n", dt, msg)
 	}
