@@ -20,18 +20,22 @@ var (
 
 
 func execCmdTimeout(cmd *exec.Cmd, timeout int64) error {
-	var err error
-	var ended bool
+	var err chan error = make(chan error, 1)
+	var ended chan bool = make(chan bool, 1)
 
-	go func(err *error, ended *bool, cmd *exec.Cmd) {
-		*err = cmd.Run()
-		*ended = true
-	}(&err, &ended,  cmd)
+	go func(err chan error, ended chan bool, cmd *exec.Cmd) {
+		var cmd_err error
+		cmd_err = cmd.Run()
+		err <- cmd_err
+		ended <- true
+	}(err, ended,  cmd)
 
 	end_time := time.Now().Unix() + timeout
 	for time.Now().Unix() < end_time {
-		if  ended {
-			return  err
+		if len(ended) != 0 {
+			if  <-ended {
+				return  <-err
+			}
 		}
 		time.Sleep(time.Second * 1)
 	}
