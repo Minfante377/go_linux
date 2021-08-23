@@ -16,9 +16,7 @@ var log_chan chan string = make(chan string, 100)
 
 
 func write() {
-	if len(log_chan) > 0{
-		log.Print(<-log_chan)
-	}
+	log.Print(<-log_chan)
 }
 
 
