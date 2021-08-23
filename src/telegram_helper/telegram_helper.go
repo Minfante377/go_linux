@@ -245,7 +245,8 @@ func execCmd(msg string, token string, chat_id int, pass string,
 		err, stdout, stderr = cmd_helper.ExecCmd(msg, user_pwd, user_name,
 												 pass)
 		if err != nil {
-			err = sendMsg(chat_id, stderr, token)
+			var out string = fmt.Sprintf("%s\nError:\n%s", stdout, stderr)
+			err = sendMsg(chat_id, out, token)
 		} else {
 			err = sendMsg(chat_id, stdout, token)
 		}
