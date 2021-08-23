@@ -22,13 +22,18 @@ var (
 func execCmdTimeout(cmd *exec.Cmd, timeout int64) error {
 	var err chan error = make(chan error, 1)
 	var ended chan bool = make(chan bool, 1)
+	var cmd_chan chan *exec.Cmd = make(chan *exec.Cmd, 1)
 
-	go func(err chan error, ended chan bool, cmd *exec.Cmd) {
+	cmd_chan <- cmd
+
+	go func(err chan error, ended chan bool, cmd_chan chan *exec.Cmd) {
 		var cmd_err error
+		var cmd *exec.Cmd
+		cmd = <- cmd_chan
 		cmd_err = cmd.Run()
 		err <- cmd_err
 		ended <- true
-	}(err, ended,  cmd)
+	}(err, ended,  cmd_chan)
 
 	end_time := time.Now().Unix() + timeout
 	for time.Now().Unix() < end_time {
