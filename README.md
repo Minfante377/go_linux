@@ -24,4 +24,3 @@ multiple users. Configuration is aimed to be simple.
 
 - Use a better DB engine.
 - Add more scripts.
-# Work in progress...

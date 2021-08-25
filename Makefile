@@ -15,7 +15,7 @@ endif
 LDFLAGS=-ldflags "-X=main.Version=$(VERSION) -X=main.Debug=$(DEBUG) -X=main.LogDir=$(LOG_DIR) -X=main.Scripts=$(SCRIPTS) -X=main.TelegramToken=$(TELEGRAM_TOKEN) -X=main.Admin=$(ADMIN)"
 
 install:
-	go get -d ./...
+	@GOPATH=$(GOPATH) go get -d ./...
 
 build:
 	@GOPATH=$(GOPATH) go build $(LDFLAGS) -o bin/$(PROJECT_NAME) src/main.go
